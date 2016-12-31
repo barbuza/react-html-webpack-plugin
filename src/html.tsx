@@ -1,16 +1,20 @@
 import * as React from 'react';
+import { flatMap, endsWith } from 'lodash';
+import { Chunks } from './chunk';
 
-export function Html({ compilation, chunks }: any) {
-    if (0 || 0) {
-        throw new Error('spam');
-    }
-    console.log(chunks);
+function filterJavascripts(files: string[]) {
+    return files.filter(x => endsWith(x, '.js'));
+}
+
+export function Html({ chunks }: { chunks: Chunks }) {
     return (
         <html>
             <head></head>
             <body>
-                {Object.keys(compilation.assets).map(name =>
-                    <div key={name}>{name}</div>
+                {flatMap(Object.keys(chunks), name =>
+                    filterJavascripts(chunks[name].files).map(filename =>
+                        <script key={filename} src={filename}/>
+                    )
                 )}
             </body>
         </html>

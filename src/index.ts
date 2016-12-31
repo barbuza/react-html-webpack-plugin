@@ -9,6 +9,7 @@ import * as LoaderTargetPlugin from 'webpack/lib/LoaderTargetPlugin';
 import * as LibraryTemplatePlugin from 'webpack/lib/LibraryTemplatePlugin';
 import * as SingleEntryPlugin from 'webpack/lib/SingleEntryPlugin';
 
+import { Chunks } from './chunk';
 
 interface ReactHtmlPluginOptions {
     doctype: boolean;
@@ -36,6 +37,9 @@ class ReactHtmlPlugin {
     protected options: ReactHtmlPluginOptions;
 
     constructor(source: string, options: Partial<ReactHtmlPluginOptions> = {}) {
+        if (!source) {
+            throw new Error('source must be specified for ReactHtmlPlugin');
+        }
         this.options = { ...defaultOptions, ...options, source };
     }
 
@@ -44,10 +48,19 @@ class ReactHtmlPlugin {
         const script = new Script(result.source, { filename: this.options.source });
         script.runInContext(context);
         const exports = (context as any).reactHtmlPluginContext;
-        let markup = renderToStaticMarkup(createElement(exports.Html, {
-            compilation,
-            chunks: compilation.getStats().toJson().chunks
-        }));
+        const chunksJson = compilation.getStats().toJson().chunks;
+        const chunks: Chunks = {};
+        for (const chunk of chunksJson) {
+            if (chunk.names && chunk.names.length) {
+                chunks[chunk.names[0]] = {
+                    files: chunk.files as string[],
+                    hash: chunk.hash,
+                    id: chunk.id,
+                    extraAsync: chunk.extraAsync
+                };
+            }
+        }
+        let markup = renderToStaticMarkup(createElement(exports.Html, { compilation, chunks }));
         if (this.options.doctype) {
             markup = `<!doctype html>${markup}`;
         }
