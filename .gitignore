@@ -2,3 +2,4 @@
 /node_modules
 /bundle_*.js
 /index.html
+/src/*.js
